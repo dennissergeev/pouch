@@ -1,0 +1,11 @@
+include README.rst
+
+include setup.cfg
+
+recursive-include pouch *.pyx *.c *.pxd
+
+prune build
+prune docs/_build
+prune docs/api
+
+global-exclude *.pyc *.o
