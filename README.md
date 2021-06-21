@@ -1,5 +1,13 @@
 <p align="center">
-[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/) [![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg?logo=gnu)](LICENSE) [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+<a href="https://www.python.org/downloads/">
+<img src="https://img.shields.io/badge/python-3.9-blue.svg?logo=python&logoColor=white"
+     alt="Python 3.9"></a>
+<a href="LICENSE">
+<img src="https://img.shields.io/badge/License-LGPL%20v3-blue.svg?logo=gnu"
+     alt="License: LGPL v3"></a>
+<a href="https://github.com/psf/black">
+<img src="https://img.shields.io/badge/code%20style-black-000000.svg"
+     alt="black"></a>
 </p>
 
 # pouch
