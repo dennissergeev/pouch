@@ -1,4 +1,4 @@
-# coding: utf-8
+# -*- coding: utf-8 -*-
 """Common objects for mean climate diagnostics of global UM runs."""
 # Scientific stack
 import iris
@@ -629,7 +629,8 @@ def rescale_day_length(cube, day_length, model=um):
     # Rescale the main time coordinate by starting from the same start date, but
     # having a different step for each hour
     scaled_time_coord = orig_time_coord.copy(
-        points=np.arange(time_len) * (BASE_DAY_LEN / day_length) + orig_time_coord.points[0]
+        points=np.arange(time_len) * (BASE_DAY_LEN / day_length)
+        + orig_time_coord.points[0]
     )
     cube.replace_coord(scaled_time_coord)
     # Create a sawtooth-like array of hours, which are reset to 0 every forecast day

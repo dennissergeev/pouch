@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Temporary storage for plotting functions."""
 from pathlib import Path
 

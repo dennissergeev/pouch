@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# coding: utf-8
+# -*- coding: utf-8 -*-
 """Triage a standard UM run."""
 # Standard library tools
 import argparse

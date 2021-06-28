@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Working with Path-like objects."""
 from pathlib import Path
 

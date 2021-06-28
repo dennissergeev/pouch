@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Logging utilities."""
 import sys
 from datetime import datetime
