@@ -70,7 +70,7 @@ def add_aux_yticks(
 
 def use_style():
     """Load custom matplotlib style sheet."""
-    plt.style.use("simple.mplstyle")
+    plt.style.use(Path(__file__).parent / "simple.mplstyle")
 
 
 def make_map_figure(ncols, nrows, rect=111, **axgr_kw):
