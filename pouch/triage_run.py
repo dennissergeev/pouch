@@ -196,10 +196,12 @@ def plotter(cubelist, label, outdir, show=True):
         },
     }
     # Equalise time coordinate
-    cl = iris.cube.CubeList()
-    for cube in cubelist:
-        cl.append(interp_to_cube_time(cube, cubelist.extract_cube(um.t_sfc)))
-    cubelist = cl
+    cubelist = iris.cube.CubeList(
+        [
+            interp_to_cube_time(cube, cubelist.extract_cube(um.t_sfc))
+            for cube in cubelist
+        ]
+    )
 
     # Compute the specified diagnostics
     for vrbl_dict in vrbl2plot.values():
