@@ -8,7 +8,8 @@ from time import time
 import warnings
 
 # Sci
-import iris
+import iris.analysis
+import iris.cube
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
@@ -20,8 +21,8 @@ from aeolus.io import load_data
 from aeolus.model import um
 from aeolus.plot import tex2cf_units
 
-from .proc_um_output import get_filename_list
-from .log import create_logger
+from pouch.proc_um_output import get_filename_list
+from pouch.log import create_logger
 
 # Global definitions and styles
 warnings.filterwarnings("ignore")
@@ -73,7 +74,7 @@ def parse_args(args=None):
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         epilog=f"""Usage:
-./{SCRIPT} ~/path/to/inp/dir/ -p trap1e -s 1000 -r hab1 -o ~/plots/triage
+./{SCRIPT} ~/path/to/inp/dir/ -p trap1e -s 1000 -l test_label -o ~/plots/triage
 """,
     )
 
@@ -419,7 +420,7 @@ def main(args=None):
         L.critical("Files are empty!")
         return
 
-    outdir = args.outdir
+    outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
     # Process data and make a plot

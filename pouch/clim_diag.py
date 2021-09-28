@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 """Common objects for mean climate diagnostics of global UM runs."""
 # Scientific stack
-import iris
+import iris.analysis
+import iris.cube
+from iris.coords import AuxCoord
 from iris.exceptions import ConstraintMismatchError as ConMisErr
+from iris.exceptions import CoordinateCollapseError as CooColErr
+from iris.util import promote_aux_coord_to_dim_coord
 
 import scipy.stats.mstats
 
@@ -405,7 +409,7 @@ def mse_hdiv_time_spatial_mean(cubelist, model=um):
         flux_div_mean = spatial(flux_div_vmean, "mean")
         try:
             flux_div_mean = flux_div_mean.collapsed(model.t, iris.analysis.MEAN)
-        except iris.exceptions.CoordinateCollapseError:
+        except CooColErr:
             pass
         flux_div_mean.rename(f"integrated_horizontal_divergence_of_{cmpnt.name()}")
         flux_div_mean.convert_units("W m^-2")
@@ -533,12 +537,12 @@ def vertical_eddy_flux(cubelist, scalar, model=um):
     try:
         w_mean = spatial(w_mean, "mean", model=model)
         s_mean = spatial(s_mean, "mean", model=model)
-    except iris.exceptions.CoordinateCollapseError:
+    except CooColErr:
         pass
     try:
         w_mean = w_mean.collapsed(model.t, iris.analysis.MEAN)
         s_mean = s_mean.collapsed(model.t, iris.analysis.MEAN)
-    except iris.exceptions.CoordinateCollapseError:
+    except CooColErr:
         pass
     w_dev = w_cube - w_mean
     s_dev = s_cube - s_mean
@@ -546,7 +550,7 @@ def vertical_eddy_flux(cubelist, scalar, model=um):
     flux = w_dev * s_dev
     try:
         flux = flux.collapsed(model.t, iris.analysis.MEAN)
-    except iris.exceptions.CoordinateCollapseError:
+    except CooColErr:
         pass
     return flux
 
@@ -619,7 +623,7 @@ def rescale_day_length(cube, day_length, model=um):
             orig_fcst_ref_coord = cube.coord(model.fcst_ref).copy()
         cube.remove_coord(model.fcst_ref)
         # Promote `time` to be a dimensional coordinate instead of forecast period/reference
-        iris.util.promote_aux_coord_to_dim_coord(cube, model.t)
+        promote_aux_coord_to_dim_coord(cube, model.t)
         cubes.append(cube)
     # Concatenate cubes w/o the forecast-related coordinates, effectively
     # flattenning the input cube along the time axis.
@@ -639,7 +643,7 @@ def rescale_day_length(cube, day_length, model=um):
     )[:time_len]
     # Add the sawtooth array as an auxiliary coordinate using the original `fcst_prd` coordinate
     cube.add_aux_coord(
-        iris.coords.AuxCoord.from_coord(orig_fcst_prd_coord).copy(
+        AuxCoord.from_coord(orig_fcst_prd_coord).copy(
             points=hour_of_day * BASE_DAY_LEN / day_length
         ),
         data_dims=cube.coord_dims(scaled_time_coord),
