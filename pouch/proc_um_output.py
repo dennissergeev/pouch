@@ -8,6 +8,7 @@ import warnings
 
 # Scientific stack
 import iris
+import iris.cube
 
 # My packages and local scripts
 from aeolus.coord import (

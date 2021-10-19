@@ -8,20 +8,27 @@ from time import time
 import warnings
 
 # Sci
-import iris
+import iris.analysis
+import iris.cube
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
 
 # My packages and local scripts
-from aeolus.calc import horiz_wind_cmpnts, spatial, toa_net_energy, zonal_mean
-from aeolus.coord import get_cube_rel_days, interp_to_cube_time, isel, roll_cube_pm180
+from aeolus.calc import (
+    horiz_wind_cmpnts,
+    spatial,
+    toa_net_energy,
+    zonal_mean,
+    time_mean,
+)
+from aeolus.coord import get_cube_rel_days, isel, roll_cube_pm180
 from aeolus.io import load_data
 from aeolus.model import um
 from aeolus.plot import tex2cf_units
 
-from .proc_um_output import get_filename_list
-from .log import create_logger
+from pouch.proc_um_output import get_filename_list
+from pouch.log import create_logger
 
 # Global definitions and styles
 warnings.filterwarnings("ignore")
@@ -59,7 +66,7 @@ def _get_uv_and_scalar(cubelist, scalar_name, z_idx=20, model=um):
     s = cl.extract_cube(scalar_name)
     cubes = []
     for cube in [u, v, s]:
-        cube = cube.collapsed(model.t, iris.analysis.MEAN)
+        cube = time_mean(cube)
         cube.coord(model.x).bounds = None
         cube = roll_cube_pm180(cube, model=model)
         cubes.append(cube)
@@ -73,7 +80,7 @@ def parse_args(args=None):
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         epilog=f"""Usage:
-./{SCRIPT} ~/path/to/inp/dir/ -p trap1e -s 1000 -r hab1 -o ~/plots/triage
+./{SCRIPT} ~/path/to/inp/dir/ -p trap1e -s 1000 -l test_label -o ~/plots/triage
 """,
     )
 
@@ -187,27 +194,29 @@ def plotter(cubelist, label, outdir, show=True):
         },
         "vcross": {
             "func": lambda cl: [
-                zonal_mean(cl.extract_cube(i).collapsed(um.t, iris.analysis.MEAN))
-                for i in [um.u, um.temp]
+                time_mean(zonal_mean(cl.extract_cube(i))) for i in [um.u, um.temp]
             ],
             "tex_units": ["$m$ $s^{-1}$", "$K$"],
             "title": "Zonal mean zonal wind and potential temperature",
         },
     }
     # Equalise time coordinate
-    cl = iris.cube.CubeList()
-    for cube in cubelist:
-        cl.append(interp_to_cube_time(cube, cubelist.extract_cube(um.t_sfc)))
-    cubelist = cl
+    # cubelist = iris.cube.CubeList(
+    #     [
+    #         interp_to_cube_time(cube, cubelist.extract_cube(um.t_sfc))
+    #         for cube in cubelist
+    #     ]
+    # )
 
     # Compute the specified diagnostics
-    for vrbl_dict in vrbl2plot.values():
+    for vrbl_key, vrbl_dict in vrbl2plot.items():
         vrbl_dict["cubes"] = vrbl_dict["func"](cubelist)
         if isinstance(vrbl_dict["cubes"], iris.cube.Cube):
             vrbl_dict["cubes"].convert_units(tex2cf_units(vrbl_dict["tex_units"]))
         else:
             for cube, t_u in zip(vrbl_dict["cubes"], vrbl_dict["tex_units"]):
                 cube.convert_units(tex2cf_units(t_u))
+        L.info(f"{vrbl_key=} - done.")
 
     # Make the plot
     nrows = 3
@@ -381,6 +390,7 @@ def plotter(cubelist, label, outdir, show=True):
 def main(args=None):
     """Main entry point of the script."""
     t0 = time()
+    global L
     L = create_logger(Path(__file__))
     # Parse command-line arguments
     args = parse_args(args)
@@ -419,7 +429,7 @@ def main(args=None):
         L.critical("Files are empty!")
         return
 
-    outdir = args.outdir
+    outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
     # Process data and make a plot
