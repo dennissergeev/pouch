@@ -22,7 +22,7 @@ from aeolus.model import um
 
 
 KW_CART = dict(transform=ccrs.PlateCarree())
-KW_SBPLT_LABEL = dict(fontsize="small", pad=5, loc="left")
+KW_SBPLT_LABEL = dict(fontsize="x-large", fontweight="bold", pad=5, loc="left")
 KW_MAIN_TTL = dict(fontsize="large", pad=5, loc="center")
 KW_AUX_TTL = dict(fontsize="small", pad=5, loc="right")
 KW_SYM0 = dict(norm=mcol.CenteredNorm(0.0), cmap="coolwarm")
