@@ -39,7 +39,7 @@ from aeolus.calc import (
     sfc_water_balance,
     vertical_mean,
     water_path,
-    # zonal_mean,
+    zonal_mean,
 )
 from aeolus.coord import ensure_bounds, interp_cube_from_height_to_pressure_levels
 from aeolus.exceptions import MissingCubeError
@@ -650,3 +650,28 @@ def rescale_day_length(cube, day_length, model=um):
     )
     cube.add_aux_coord(orig_fcst_ref_coord)
     return cube
+
+
+@update_metadata(name="longitude_of_wave_crest", units="degrees")
+def longitude_of_wave_crest(g_height, model=um):
+    """Determine the longitude of the geopotential height anomaly maximum."""
+    # Get the deviation from the zonal mean
+    g_height_anom = g_height - zonal_mean(g_height, model=model)
+    # Select only extratropical latitudes
+    g_height_anom_et = g_height_anom.extract(
+        iris.Constraint(**{um.y: lambda x: 30 <= abs(x.point) <= 65})
+    )
+    # Average over latitudes
+    g_height_anom_et_mmean = meridional_mean(g_height_anom_et)
+    indices = np.argmax(
+        g_height_anom_et_mmean.data, axis=g_height_anom_et_mmean.coord_dims(model.x)[0]
+    )
+    xvals = g_height_anom_et_mmean.coord(model.x).points[indices]
+    xvals = iris.cube.Cube(
+        data=xvals,
+        dim_coords_and_dims=[
+            (g_height.coord(model.t).copy(), 0),
+        ],
+        attributes={**g_height.attributes},
+    )
+    return xvals
