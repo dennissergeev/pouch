@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Common objects for mean climate diagnostics of global UM runs."""
 # Scientific stack
+import dask.array as da
 import iris.analysis
 import iris.cube
 from iris.coords import AuxCoord
@@ -37,6 +38,7 @@ from aeolus.calc import (
     precip_sum,
     sfc_net_energy,
     sfc_water_balance,
+    spatial_mean,
     vertical_mean,
     water_path,
     zonal_mean,
@@ -673,5 +675,52 @@ def longitude_of_wave_crest(g_height, model=um):
             (g_height.coord(model.t).copy(), 0),
         ],
         attributes={**g_height.attributes},
+    )
+    return xvals
+
+
+@update_metadata(name="ratio_of_temperature_differences", units="1")
+def ratio_of_dn_to_eq_pole_temp_diff(atmsim, tropic_lat=25, polar_lat=65):
+    """
+    Calculate the ratio of the equator-pole to dayside-nightside
+    mean temperature difference.
+    """
+    # Define polar and equatorial regions
+    _tropics = iris.Constraint(**{atmsim.model.y: lambda x: abs(x.point) <= tropic_lat})
+    _poles = iris.Constraint(**{atmsim.model.y: lambda x: abs(x.point) >= polar_lat})
+    # Calculate the mass-weighted mean tropospheric temperature
+    temp_trop_mean = vertical_mean(
+        atmsim.temp,
+        weight_by=atmsim.dens,
+    )
+    # Calculate mean differences
+    dn_diff = spatial_mean(temp_trop_mean.extract(DAYSIDE.constraint)) - spatial_mean(
+        temp_trop_mean.extract(NIGHTSIDE.constraint)
+    )
+    ep_diff = spatial_mean(temp_trop_mean.extract(_tropics)) - spatial_mean(
+        temp_trop_mean.extract(_poles)
+    )
+    return dn_diff / ep_diff
+
+
+@update_metadata(name="latitude_of_maximum_zonal_wind", units="degrees")
+def latitude_of_max_zonal_wind(u, model=um):
+    """Determine the latitude of the jet."""
+    # Select only troposphere
+    # u_trop = u.extract(iris.Constraint(**{um.z: lambda x: 5 <= abs(x.point / 1e3) <= 17}))
+    # Average over longitudes and height
+    u_zm = zonal_mean(u, model=model)
+    u_zm = u_zm.collapsed(model.z, iris.analysis.MAX)
+    indices = da.argmax(u_zm.core_data(), axis=u_zm.coord_dims(model.y)[0])
+    xvals = u_zm.coord(model.y).points[indices.compute()]
+    # Average between S and N hemispheres
+    xvals = abs(xvals)
+    # Return the result as a cube
+    xvals = iris.cube.Cube(
+        data=xvals,
+        dim_coords_and_dims=[
+            (u.coord(model.t).copy(), 0),
+        ],
+        attributes={**u.attributes},
     )
     return xvals
