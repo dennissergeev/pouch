@@ -35,6 +35,7 @@ KW_AXGR = dict(
     cbar_size="3%",
     label_mode="",
 )
+KW_ZERO_LINE = dict(color="tab:grey", alpha=0.5, linestyle=":", dash_capstyle="round")
 
 # Locations of grid lines on maps
 XLOCS = np.arange(-180, 181, 90)
