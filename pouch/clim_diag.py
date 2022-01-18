@@ -45,7 +45,7 @@ from aeolus.calc import (
 )
 from aeolus.coord import ensure_bounds, interp_cube_from_height_to_pressure_levels
 from aeolus.exceptions import MissingCubeError
-from aeolus.meta import const_from_attrs, update_metadata
+from aeolus.meta import const_from_attrs, preserve_shape, update_metadata
 from aeolus.model import um
 from aeolus.region import Region
 from aeolus.subset import l_range_constr
@@ -724,3 +724,51 @@ def latitude_of_max_zonal_wind(u, model=um):
         attributes={**u.attributes},
     )
     return xvals
+
+
+@const_from_attrs()
+def wind_rot_div(u, v, truncation=None, const=None, model=um):
+    """
+    Split the horizontal wind field into divergent and zonal mean and eddy rotational components.
+
+    The Helmholtz decomposition method uses the `windspharm` library and follows
+    Hammond and Lewis (2021), https://doi.org/10.1073/pnas.2022705118
+
+    Parameters
+    ----------
+    u: iris.cube.Cube
+        Eastward wind.
+    v: iris.cube.Cube
+        Northward wind.
+
+    Returns
+    -------
+    out: dict
+        Dictionary of cubes of:
+          - input wind components,
+          - divergent components,
+          - rotational components,
+          - zonal mean components,
+          - zonal eddy components.
+    """
+    from windspharm.iris import VectorWind
+
+    vec = VectorWind(u, v, rsphere=const.radius.data)
+    div_cmpnt_u, div_cmpnt_v, rot_cmpnt_u, rot_cmpnt_v = vec.helmholtz(
+        truncation=truncation
+    )
+    out = {}
+    out["u_total"] = u
+    out["v_total"] = v
+    out["u_div"] = iris.util.reverse(div_cmpnt_u, model.y)
+    out["v_div"] = iris.util.reverse(div_cmpnt_v, model.y)
+    out["u_rot"] = iris.util.reverse(rot_cmpnt_u, model.y)
+    out["v_rot"] = iris.util.reverse(rot_cmpnt_v, model.y)
+
+    for cmpnt in ["u", "v"]:
+        rot_cmpnt = out[f"{cmpnt}_rot"]
+        out[f"{cmpnt}_rot_zm"] = preserve_shape(zonal_mean)(rot_cmpnt)
+        out[f"{cmpnt}_rot_zm"].rename(f"zonal_mean_of_{rot_cmpnt.name()}")
+        out[f"{cmpnt}_rot_eddy"] = rot_cmpnt - out[f"{cmpnt}_rot_zm"]
+        out[f"{cmpnt}_rot_eddy"].rename(f"zonal_deviation_of_{rot_cmpnt.name()}")
+    return out
