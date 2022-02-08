@@ -413,7 +413,7 @@ def main(args=None):
 
     # Make a list of files matching the file mask and the start day threshold
     fnames = get_filename_list(
-        inpdir, ts_start=args.startday, ts_start=args.endday, every=1, regex=glm_regex
+        inpdir, ts_start=args.startday, ts_end=args.endday, every=1, regex=glm_regex
     )
     if len(fnames) == 0:
         L.critical("No files found!")
