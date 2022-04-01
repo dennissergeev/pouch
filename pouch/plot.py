@@ -20,6 +20,8 @@ from aeolus.plot import (
 )
 from aeolus.model import um
 
+from . import RUNTIME
+
 
 KW_CART = dict(transform=ccrs.PlateCarree())
 KW_SBPLT_LABEL = dict(fontsize="x-large", fontweight="bold", pad=5, loc="left")
@@ -381,9 +383,9 @@ def draw_vector_cubes(
         )
 
 
-def figsave(fig, imgname, stamp=True, **kw_savefig):
+def figsave(fig, imgname, **kw_savefig):
     """Save figure and print relative path to it."""
-    if stamp:
+    if RUNTIME.figsave_stamp:
         fig.suptitle(
             imgname.name,
             x=0.5,

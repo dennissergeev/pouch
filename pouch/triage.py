@@ -122,6 +122,13 @@ def parse_args(args=None):
         help="Load files with timestamp >= this",
     )
     ap.add_argument(
+        "-e",
+        "--endday",
+        type=int,
+        default=-1,
+        help="Load files with timestamp <= this",
+    )
+    ap.add_argument(
         "-l",
         "--label",
         type=str,
@@ -405,7 +412,9 @@ def main(args=None):
     glm_regex = GLM_FILE_REGEX_OPTS[args.filemask]
 
     # Make a list of files matching the file mask and the start day threshold
-    fnames = get_filename_list(inpdir, ts_start=args.startday, every=1, regex=glm_regex)
+    fnames = get_filename_list(
+        inpdir, ts_start=args.startday, ts_end=args.endday, every=1, regex=glm_regex
+    )
     if len(fnames) == 0:
         L.critical("No files found!")
         return
