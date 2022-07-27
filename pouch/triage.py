@@ -10,6 +10,7 @@ import warnings
 # Sci
 import iris.analysis
 import iris.cube
+import iris.exceptions
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
@@ -217,7 +218,11 @@ def plotter(cubelist, label, outdir, show=True):
 
     # Compute the specified diagnostics
     for vrbl_key, vrbl_dict in vrbl2plot.items():
-        vrbl_dict["cubes"] = vrbl_dict["func"](cubelist)
+        try:
+            vrbl_dict["cubes"] = vrbl_dict["func"](cubelist)
+        except iris.exceptions.ConstraintMismatchError:
+            L.info(f"{vrbl_key=} - missing.")
+            continue
         if isinstance(vrbl_dict["cubes"], iris.cube.Cube):
             vrbl_dict["cubes"].convert_units(tex2cf_units(vrbl_dict["tex_units"]))
         else:
@@ -234,151 +239,148 @@ def plotter(cubelist, label, outdir, show=True):
 
     fig = plt.figure(figsize=(nrows * 6, ncols * 4))
 
-    plt_lab = "toa_net"
-    ax = fig.add_subplot(nrows, ncols, 1, label=plt_lab)
-    cube = vrbl2plot[plt_lab]["cubes"]
-    ax.plot(get_cube_rel_days(cube), cube.data, marker=".")
-    ax.set_xlabel("Time [day]")
-    ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"])
-    ax.grid(**kw_grid)
+    for plt_lab in vrbl2plot.keys():
+        if not (cubes := vrbl2plot[plt_lab].get("cubes")):
+            continue
+        match plt_lab:
+            case "toa_net":
+                ax = fig.add_subplot(nrows, ncols, 1, label=plt_lab)
+                cube = vrbl2plot[plt_lab]["cubes"]
+                ax.plot(get_cube_rel_days(cube), cube.data, marker=".")
+                ax.set_xlabel("Time [day]")
+                ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"])
+                ax.grid(**kw_grid)
 
-    plt_lab = "p_sfc"
-    ax = fig.add_subplot(nrows, ncols, 4, label=plt_lab)
-    cube = vrbl2plot[plt_lab]["cubes"]
-    ax.plot(get_cube_rel_days(cube), cube.data, marker=".")
-    ax.set_xlabel("Time [day]")
-    ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"])
-    ax.grid(**kw_grid)
+            case "p_sfc":
+                ax = fig.add_subplot(nrows, ncols, 4, label=plt_lab)
+                cube = vrbl2plot[plt_lab]["cubes"]
+                ax.plot(get_cube_rel_days(cube), cube.data, marker=".")
+                ax.set_xlabel("Time [day]")
+                ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"])
+                ax.grid(**kw_grid)
 
-    plt_lab = "t_sfc"
-    ax = fig.add_subplot(nrows, ncols, 2, label=plt_lab)
-    cubes = vrbl2plot[plt_lab]["cubes"]
-    ax.fill_between(
-        get_cube_rel_days(cubes[0]), cubes[0].data, cubes[2].data, alpha=0.5
-    )
-    ax.plot(get_cube_rel_days(cubes[1]), cubes[1].data, marker=".")
-    ax.set_xlabel("Time [day]")
-    ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"][0])
-    ax.grid(**kw_grid)
+            case "t_sfc":
+                ax = fig.add_subplot(nrows, ncols, 2, label=plt_lab)
+                ax.fill_between(
+                    get_cube_rel_days(cubes[0]), cubes[0].data, cubes[2].data, alpha=0.5
+                )
+                ax.plot(get_cube_rel_days(cubes[1]), cubes[1].data, marker=".")
+                ax.set_xlabel("Time [day]")
+                ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"][0])
+                ax.grid(**kw_grid)
 
-    plt_lab = "u"
-    ax = fig.add_subplot(nrows, ncols, 5, label=plt_lab)
-    cubes = vrbl2plot[plt_lab]["cubes"]
-    ax.fill_between(
-        get_cube_rel_days(cubes[0]), cubes[0].data, cubes[2].data, alpha=0.5
-    )
-    ax.plot(get_cube_rel_days(cubes[1]), cubes[1].data, marker=".")
-    ax.set_xlabel("Time [day]")
-    ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"][0])
-    ax.grid(**kw_grid)
+            case "u":
+                ax = fig.add_subplot(nrows, ncols, 5, label=plt_lab)
+                ax.fill_between(
+                    get_cube_rel_days(cubes[0]), cubes[0].data, cubes[2].data, alpha=0.5
+                )
+                ax.plot(get_cube_rel_days(cubes[1]), cubes[1].data, marker=".")
+                ax.set_xlabel("Time [day]")
+                ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"][0])
+                ax.grid(**kw_grid)
 
-    plt_lab = "temp"
-    ax = fig.add_subplot(nrows, ncols, 3, label=plt_lab)
-    cubes = vrbl2plot[plt_lab]["cubes"]
-    for cube in cubes:
-        leg_label = f"{cube.coord(um.z).points[0]:.0f} m"
-        ax.plot(
-            get_cube_rel_days(cube),
-            cube.data,
-            label=leg_label,
-        )
-    ax.legend(title="Levels")
-    ax.set_xlabel("Time [day]")
-    ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"][0])
-    ax.grid(**kw_grid)
+            case "temp":
+                ax = fig.add_subplot(nrows, ncols, 3, label=plt_lab)
+                for cube in cubes:
+                    leg_label = f"{cube.coord(um.z).points[0]:.0f} m"
+                    ax.plot(
+                        get_cube_rel_days(cube),
+                        cube.data,
+                        label=leg_label,
+                    )
+                ax.legend(title="Levels")
+                ax.set_xlabel("Time [day]")
+                ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"][0])
+                ax.grid(**kw_grid)
 
-    plt_lab = "sh"
-    ax = fig.add_subplot(nrows, ncols, 6, label=plt_lab)
-    cubes = vrbl2plot[plt_lab]["cubes"]
-    for cube in cubes:
-        leg_label = f"{cube.coord(um.z).points[0]:.0f} m"
-        ax.plot(
-            get_cube_rel_days(cube),
-            cube.data,
-            label=leg_label,
-        )
-    ax.legend(title="Levels")
-    ax.set_xlabel("Time [day]")
-    ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"][0])
-    ax.set_yscale("log")
-    ax.grid(**kw_grid)
+            case "sh":
+                ax = fig.add_subplot(nrows, ncols, 6, label=plt_lab)
+                for cube in cubes:
+                    leg_label = f"{cube.coord(um.z).points[0]:.0f} m"
+                    ax.plot(
+                        get_cube_rel_days(cube),
+                        cube.data,
+                        label=leg_label,
+                    )
+                ax.legend(title="Levels")
+                ax.set_xlabel("Time [day]")
+                ax.set_ylabel(vrbl2plot[plt_lab]["tex_units"][0])
+                ax.set_yscale("log")
+                ax.grid(**kw_grid)
 
-    plt_lab = "map_low_atm"
-    ax = fig.add_subplot(nrows, ncols, 7, label=plt_lab)
-    cubes = vrbl2plot[plt_lab]["cubes"]
-    cntrf = ax.contourf(
-        cubes[-1].coord(um.x).points,
-        cubes[-1].coord(um.y).points,
-        cubes[-1].data,
-        cmap="inferno",
-    )
-    cb = fig.colorbar(cntrf, ax=ax, orientation="horizontal", pad=0.2)
-    ax.quiver(
-        cubes[0].coord(um.x).points[::xskip],
-        cubes[0].coord(um.y).points[::yskip],
-        cubes[0].data[::yskip, ::xskip],
-        cubes[1].data[::yskip, ::xskip],
-        color="k",
-    )
-    ax.set_xlim(cubes[0].coord(um.x).points[0], cubes[0].coord(um.x).points[-1])
-    ax.set_ylim(cubes[0].coord(um.y).points[0], cubes[0].coord(um.y).points[-1])
-    cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][-1])
-    ax.set_xlabel(r"Longitude [$^\circ$]")
-    ax.set_ylabel(r"Latitude [$^\circ$]")
-    ax.add_artist(
-        AnchoredText(f"Wind at {cubes[0].coord(um.z).points[0]:.0f} m", loc=1)
-    )
-    ax.grid(**kw_grid)
+            case "map_low_atm":
+                ax = fig.add_subplot(nrows, ncols, 7, label=plt_lab)
+                cntrf = ax.contourf(
+                    cubes[-1].coord(um.x).points,
+                    cubes[-1].coord(um.y).points,
+                    cubes[-1].data,
+                    cmap="inferno",
+                )
+                cb = fig.colorbar(cntrf, ax=ax, orientation="horizontal", pad=0.2)
+                ax.quiver(
+                    cubes[0].coord(um.x).points[::xskip],
+                    cubes[0].coord(um.y).points[::yskip],
+                    cubes[0].data[::yskip, ::xskip],
+                    cubes[1].data[::yskip, ::xskip],
+                    color="k",
+                )
+                ax.set_xlim(cubes[0].coord(um.x).points[0], cubes[0].coord(um.x).points[-1])
+                ax.set_ylim(cubes[0].coord(um.y).points[0], cubes[0].coord(um.y).points[-1])
+                cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][-1])
+                ax.set_xlabel(r"Longitude [$^\circ$]")
+                ax.set_ylabel(r"Latitude [$^\circ$]")
+                ax.add_artist(
+                    AnchoredText(f"Wind at {cubes[0].coord(um.z).points[0]:.0f} m", loc=1)
+                )
+                ax.grid(**kw_grid)
 
-    plt_lab = "map_up_atm"
-    ax = fig.add_subplot(nrows, ncols, 8, label=plt_lab)
-    cubes = vrbl2plot[plt_lab]["cubes"]
-    cntrf = ax.contourf(
-        cubes[-1].coord(um.x).points,
-        cubes[-1].coord(um.y).points,
-        cubes[-1].data,
-        cmap="cubehelix",
-    )
-    cb = fig.colorbar(cntrf, ax=ax, orientation="horizontal", pad=0.2)
-    ax.quiver(
-        cubes[0].coord(um.x).points[::xskip],
-        cubes[0].coord(um.y).points[::yskip],
-        cubes[0].data[::yskip, ::xskip],
-        cubes[1].data[::yskip, ::xskip],
-        color="k",
-    )
-    ax.set_xlim(cubes[0].coord(um.x).points[0], cubes[0].coord(um.x).points[-1])
-    ax.set_ylim(cubes[0].coord(um.y).points[0], cubes[0].coord(um.y).points[-1])
-    cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][-1])
-    ax.set_xlabel(r"Longitude [$^\circ$]")
-    ax.set_ylabel(r"Latitude [$^\circ$]")
-    ax.add_artist(
-        AnchoredText(f"Wind at {cubes[0].coord(um.z).points[0]:.0f} m", loc=1)
-    )
-    ax.grid(**kw_grid)
+            case "map_up_atm":
+                ax = fig.add_subplot(nrows, ncols, 8, label=plt_lab)
+                cntrf = ax.contourf(
+                    cubes[-1].coord(um.x).points,
+                    cubes[-1].coord(um.y).points,
+                    cubes[-1].data,
+                    cmap="cubehelix",
+                )
+                cb = fig.colorbar(cntrf, ax=ax, orientation="horizontal", pad=0.2)
+                ax.quiver(
+                    cubes[0].coord(um.x).points[::xskip],
+                    cubes[0].coord(um.y).points[::yskip],
+                    cubes[0].data[::yskip, ::xskip],
+                    cubes[1].data[::yskip, ::xskip],
+                    color="k",
+                )
+                ax.set_xlim(cubes[0].coord(um.x).points[0], cubes[0].coord(um.x).points[-1])
+                ax.set_ylim(cubes[0].coord(um.y).points[0], cubes[0].coord(um.y).points[-1])
+                cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][-1])
+                ax.set_xlabel(r"Longitude [$^\circ$]")
+                ax.set_ylabel(r"Latitude [$^\circ$]")
+                ax.add_artist(
+                    AnchoredText(f"Wind at {cubes[0].coord(um.z).points[0]:.0f} m", loc=1)
+                )
+                ax.grid(**kw_grid)
 
-    plt_lab = "vcross"
-    ax = fig.add_subplot(nrows, ncols, 9, label=plt_lab)
-    cubes = vrbl2plot[plt_lab]["cubes"]
-    cntrf = ax.contourf(
-        cubes[0].coord(um.y).points,
-        cubes[0].coord(um.z).points,
-        cubes[0].data,
-        cmap="viridis",
-    )
-    cntr = ax.contour(
-        cubes[1].coord(um.y).points,
-        cubes[1].coord(um.z).points,
-        cubes[1].data,
-        cmap="inferno",
-        levels=np.concatenate([np.arange(0, 400, 20), np.arange(400, 2000, 200)]),
-    )
-    ax.clabel(cntr, fmt="%.0f")
-    cb = fig.colorbar(cntrf, ax=ax, orientation="horizontal", pad=0.2)
-    cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][0])
-    ax.set_xlabel(r"Latitude [$^\circ$]")
-    ax.set_ylabel("Height [$m$]")
-    ax.set_ylim(cubes[0].coord(um.z).points[0], cubes[0].coord(um.z).points[-1])
+            case "vcross":
+                ax = fig.add_subplot(nrows, ncols, 9, label=plt_lab)
+                cntrf = ax.contourf(
+                    cubes[0].coord(um.y).points,
+                    cubes[0].coord(um.z).points,
+                    cubes[0].data,
+                    cmap="viridis",
+                )
+                cntr = ax.contour(
+                    cubes[1].coord(um.y).points,
+                    cubes[1].coord(um.z).points,
+                    cubes[1].data,
+                    cmap="inferno",
+                    levels=np.concatenate([np.arange(0, 400, 20), np.arange(400, 2000, 200)]),
+                )
+                ax.clabel(cntr, fmt="%.0f")
+                cb = fig.colorbar(cntrf, ax=ax, orientation="horizontal", pad=0.2)
+                cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][0])
+                ax.set_xlabel(r"Latitude [$^\circ$]")
+                ax.set_ylabel("Height [$m$]")
+                ax.set_ylim(cubes[0].coord(um.z).points[0], cubes[0].coord(um.z).points[-1])
 
     axdict = {ax.get_label(): ax for ax in fig.axes if ax.get_label() != "<colorbar>"}
 
