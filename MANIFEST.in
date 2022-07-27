@@ -1,11 +1,9 @@
-include README.rst
+include README.md
 
 include setup.cfg
 
-recursive-include pouch *.pyx *.c *.pxd
+recursive-include pouch
 
 prune build
-prune docs/_build
-prune docs/api
 
 global-exclude *.pyc *.o
