@@ -724,3 +724,19 @@ def latitude_of_max_zonal_wind(u, model=um):
         attributes={**u.attributes},
     )
     return xvals
+
+
+@update_metadata(name="amplitude_of_wave_crest", units="m^2 s^-2")
+def amplitude_of_wave_crest(g_height, model=um):
+    """Determine the amplitude of the geopotential height anomaly maximum."""
+    # Get the deviation from the zonal mean
+    g_height_anom = g_height - zonal_mean(g_height, model=model)
+    # Select only extratropical latitudes
+    g_height_anom_et = g_height_anom.extract(
+        iris.Constraint(**{um.y: lambda x: 30 <= abs(x.point) <= 65})
+    )
+    # Average over latitudes
+    g_height_anom_et_mmean = meridional_mean(g_height_anom_et)
+    # Find maximum
+    out = spatial(g_height_anom_et_mmean, "max")
+    return out
