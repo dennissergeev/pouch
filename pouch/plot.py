@@ -367,12 +367,12 @@ def draw_vector_cubes(
             h,
             *quiverkey_xy,
             qk_ref_wspd,
-            fr"${qk_ref_wspd}$" + r" $m$ $s^{-1}$",
+            rf"${qk_ref_wspd}$" + r" $m$ $s^{-1}$",
             **kw_quiverkey,
         )
 
     if add_wind_contours:
-        wspd = (u ** 2 + v ** 2) ** 0.5
+        wspd = (u**2 + v**2) ** 0.5
         ax.contour(
             lons,
             lats,

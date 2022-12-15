@@ -188,7 +188,7 @@ def wspd_typical(cubelist, aggr="median", model=um):
     """
     u = cubelist.extract_cube(model.u)
     v = cubelist.extract_cube(model.v)
-    return spatial((u ** 2 + v ** 2) ** 0.5, aggr).collapsed(
+    return spatial((u**2 + v**2) ** 0.5, aggr).collapsed(
         [model.t, model.z], getattr(iris.analysis, aggr.upper())
     )
 
@@ -259,7 +259,7 @@ def nondim_rossby_deformation_radius(
         temp_proxy = spatial(cubelist.extract_cube(model.t_sfc), "mean")
         beta = 2 * const.planet_rotation_rate / const.radius
         rossby_sq = (const.dry_air_gas_constant * temp_proxy) ** 0.5 / (2 * beta)
-        nondim_rossby = rossby_sq ** 0.5 / const.radius
+        nondim_rossby = rossby_sq**0.5 / const.radius
     return nondim_rossby
 
 
@@ -297,7 +297,7 @@ def nondim_rhines_number(cubelist, const=None, wspd_aggr="mean", model=um):
     def _wspd_typical(cubelist, aggr=wspd_aggr):
         u = cubelist.extract_cube(model.u)
         v = cubelist.extract_cube(model.v)
-        return spatial((u ** 2 + v ** 2) ** 0.5, aggr)
+        return spatial((u**2 + v**2) ** 0.5, aggr)
 
     double_omega_radius = 2 * const.planet_rotation_rate * const.radius
     u_proxy = _wspd_typical(cubelist, wspd_aggr) / 2

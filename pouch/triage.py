@@ -324,13 +324,19 @@ def plotter(cubelist, label, outdir, show=True):
                     cubes[1].data[::yskip, ::xskip],
                     color="k",
                 )
-                ax.set_xlim(cubes[0].coord(um.x).points[0], cubes[0].coord(um.x).points[-1])
-                ax.set_ylim(cubes[0].coord(um.y).points[0], cubes[0].coord(um.y).points[-1])
+                ax.set_xlim(
+                    cubes[0].coord(um.x).points[0], cubes[0].coord(um.x).points[-1]
+                )
+                ax.set_ylim(
+                    cubes[0].coord(um.y).points[0], cubes[0].coord(um.y).points[-1]
+                )
                 cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][-1])
                 ax.set_xlabel(r"Longitude [$^\circ$]")
                 ax.set_ylabel(r"Latitude [$^\circ$]")
                 ax.add_artist(
-                    AnchoredText(f"Wind at {cubes[0].coord(um.z).points[0]:.0f} m", loc=1)
+                    AnchoredText(
+                        f"Wind at {cubes[0].coord(um.z).points[0]:.0f} m", loc=1
+                    )
                 )
                 ax.grid(**kw_grid)
 
@@ -350,13 +356,19 @@ def plotter(cubelist, label, outdir, show=True):
                     cubes[1].data[::yskip, ::xskip],
                     color="k",
                 )
-                ax.set_xlim(cubes[0].coord(um.x).points[0], cubes[0].coord(um.x).points[-1])
-                ax.set_ylim(cubes[0].coord(um.y).points[0], cubes[0].coord(um.y).points[-1])
+                ax.set_xlim(
+                    cubes[0].coord(um.x).points[0], cubes[0].coord(um.x).points[-1]
+                )
+                ax.set_ylim(
+                    cubes[0].coord(um.y).points[0], cubes[0].coord(um.y).points[-1]
+                )
                 cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][-1])
                 ax.set_xlabel(r"Longitude [$^\circ$]")
                 ax.set_ylabel(r"Latitude [$^\circ$]")
                 ax.add_artist(
-                    AnchoredText(f"Wind at {cubes[0].coord(um.z).points[0]:.0f} m", loc=1)
+                    AnchoredText(
+                        f"Wind at {cubes[0].coord(um.z).points[0]:.0f} m", loc=1
+                    )
                 )
                 ax.grid(**kw_grid)
 
@@ -373,14 +385,18 @@ def plotter(cubelist, label, outdir, show=True):
                     cubes[1].coord(um.z).points,
                     cubes[1].data,
                     cmap="inferno",
-                    levels=np.concatenate([np.arange(0, 400, 20), np.arange(400, 2000, 200)]),
+                    levels=np.concatenate(
+                        [np.arange(0, 400, 20), np.arange(400, 2000, 200)]
+                    ),
                 )
                 ax.clabel(cntr, fmt="%.0f")
                 cb = fig.colorbar(cntrf, ax=ax, orientation="horizontal", pad=0.2)
                 cb.ax.set_xlabel(vrbl2plot[plt_lab]["tex_units"][0])
                 ax.set_xlabel(r"Latitude [$^\circ$]")
                 ax.set_ylabel("Height [$m$]")
-                ax.set_ylim(cubes[0].coord(um.z).points[0], cubes[0].coord(um.z).points[-1])
+                ax.set_ylim(
+                    cubes[0].coord(um.z).points[0], cubes[0].coord(um.z).points[-1]
+                )
 
     axdict = {ax.get_label(): ax for ax in fig.axes if ax.get_label() != "<colorbar>"}
 
